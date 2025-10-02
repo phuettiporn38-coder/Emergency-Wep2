@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>ขอความช่วยเหลือ</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC9-DnMzyvEoRTFkhc_NnCzAmHxzRxgPp4&libraries=places"></script>
+  <style>
+    body { background: linear-gradient(to right, #83a4d4, #b6fbff); }
+    .container { max-width: 750px; margin-top: 40px; }
+    .card { border-radius: 15px; box-shadow: 0 6px 20px rgba(0,0,0,0.15); background: white; }
+    .btn { border-radius: 10px; }
+    #map { height: 300px; border-radius: 10px; }
+  </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+<div class="container-fluid">
+<a class="navbar-brand" href="/">🏠 หน้าหลัก</a>
+<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+<span class="navbar-toggler-icon"></span>
+</button>
+<div class="collapse navbar-collapse" id="navbarNav">
+<ul class="navbar-nav me-auto">
+<li class="nav-item">
+<a class="nav-link" href="{{ url_for('admin_login') }}">🔐 แอดมิน</a>
+</li>
+</ul>
+</div>
+</div>
+</nav>
+
+  <div class="container">
+    <div class="card p-4">
+      <h2 class="text-center mb-4 text-primary">📌 แชร์ตำแหน่งขอความช่วยเหลือ</h2>
+      <form method="POST" enctype="multipart/form-data">
+        <div class="mb-3">
+          <label class="form-label">ชื่อ</label>
+          <input type="text" name="name" class="form-control" required>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">เบอร์โทร</label>
+          <input type="tel" name="phone" class="form-control" required>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">จุดสังเกตุใกล้ๆ</label>
+          <input type="text" id="autocomplete" name="address" class="form-control" placeholder="เช่น ห้าง ตึกสูง อื่นๆ" required>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">ประเภทหน่วยงานที่ต้องการความช่วยเหลือ</label>
+          <select name="type" class="form-select" required>
+            <option value="">-- เลือก --</option>
+            <option value="police">🚔 ตำรวจ</option>
+            <option value="hospital">🏥 โรงพยาบาล</option>
+            <option value="fire">🔥 ดับเพลิง</option>
+            <option value="rescue">🚑 กู้ภัย</option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">เลือกรูปภาพ (ถ้ามี)</label>
+          <input type="file" name="image" class="form-control" accept="image/*">
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">เลือกตำแหน่งบนแผนที่</label>
+          <div id="map"></div>
+          <input type="hidden" name="latitude" id="latitude">
+          <input type="hidden" name="longitude" id="longitude">
+        </div>
+
+        <div class="mb-3 text-center">
+          <button type="button" class="btn btn-success" onclick="getCurrentLocation()">
+            ใช้ตำแหน่งปัจจุบันของฉัน
+          </button>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100">ส่งคำขอ</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // map functions (เหมือนโค้ดเก่า)
+    let map, marker;
+    function initMap() {
+      const initialPos = { lat: 13.7563, lng: 100.5018 };
+      map = new google.maps.Map(document.getElementById("map"), { center: initialPos, zoom: 13 });
+      marker = new google.maps.Marker({ position: initialPos, map: map, draggable: true });
+      google.maps.event.addListener(marker, 'dragend', function () {
+        document.getElementById("latitude").value = marker.getPosition().lat();
+        document.getElementById("longitude").value = marker.getPosition().lng();
+      });
+      google.maps.event.addListener(map, 'click', function(event) {
+        marker.setPosition(event.latLng);
+        document.getElementById("latitude").value = event.latLng.lat();
+        document.getElementById("longitude").value = event.latLng.lng();
+      });
+      document.getElementById("latitude").value = initialPos.lat;
+      document.getElementById("longitude").value = initialPos.lng;
+    }
+    function initAutocomplete() {
+      const input = document.getElementById("autocomplete");
+      const autocomplete = new google.maps.places.Autocomplete(input);
+      autocomplete.setFields(["geometry", "formatted_address"]);
+      autocomplete.addListener("place_changed", function() {
+        const place = autocomplete.getPlace();
+        if (!place.geometry) return;
+        map.setCenter(place.geometry.location);
+        marker.setPosition(place.geometry.location);
+        document.getElementById("latitude").value = place.geometry.location.lat();
+        document.getElementById("longitude").value = place.geometry.location.lng();
+      });
+    }
+    function getCurrentLocation() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function (position) {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          const pos = { lat: lat, lng: lng };
+          map.setCenter(pos);
+          marker.setPosition(pos);
+          document.getElementById("latitude").value = lat;
+          document.getElementById("longitude").value = lng;
+        }, function () { alert("❌ ไม่สามารถดึงตำแหน่งได้"); });
+      }
+    }
+    google.maps.event.addDomListener(window, "load", function() {
+      initMap();
+      initAutocomplete();
+    });
+  </script>
+</body>
+</html>
